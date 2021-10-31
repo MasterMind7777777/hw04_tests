@@ -23,7 +23,7 @@ def index(request):
 
 
 def group_posts(request, slug):
-    group = Group.objects.get(slug=slug)
+    group = get_object_or_404(Group, slug=slug)
     post_list = group.posts.all()
     page_obj = paginator_my(request, post_list)
     template = 'posts/group_list.html'

@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 from posts.models import Group, Post
+from django.urls import reverse
 
 User = get_user_model()
 
@@ -8,7 +9,7 @@ User = get_user_model()
 class StaticURLTests(TestCase):
     def test_homepage(self):
         guest_client = Client()
-        response = guest_client.get('/')
+        response = guest_client.get(reverse('posts:index'))
         self.assertEqual(response.status_code, 200)
 
 
@@ -32,12 +33,16 @@ class PostURLTests(TestCase):
         """URL-адрес использует соответствующий шаблон."""
         # Шаблоны по адресам
         templates_url_names = {
-            '/': 'posts/index.html',
-            '/group/test_group/': 'posts/group_list.html',
-            '/profile/HasNoName/': 'posts/profile.html',
-            '/posts/1/': 'posts/post_detail.html',
-            '/create/': 'posts/create_post.html',
-            '/posts/1/edit/': 'posts/create_post.html',
+            reverse('posts:index'): 'posts/index.html',
+            reverse('posts:group_posts',
+                    kwargs={'slug': 'test_group'}): 'posts/group_list.html',
+            reverse('posts:profile',
+                    kwargs={'username': 'HasNoName'}): 'posts/profile.html',
+            reverse('posts:post_detail',
+                    kwargs={'post_id': '1'}): 'posts/post_detail.html',
+            reverse('posts:post_create'): 'posts/create_post.html',
+            reverse('posts:post_edit',
+                    kwargs={'post_id': '1'}): 'posts/create_post.html',
         }
         for adress, template in templates_url_names.items():
             with self.subTest(adress=adress):
@@ -51,15 +56,19 @@ class PostURLTests(TestCase):
             'unexisting_url не работает')
 
     def test_rights_edit(self):
-        response = self.guest_client.get('/posts/1/edit/')
-        self.assertRedirects(response, '/posts/1/')
-        response_author = self.authorized_client.get('/posts/1/edit/')
+        response = self.guest_client.get(reverse('posts:post_edit',
+                                         kwargs={'post_id': '1'}))
+        self.assertRedirects(response, reverse('posts:post_detail',
+                                               kwargs={'post_id': '1'}))
+        response_author = self.authorized_client.get(reverse('posts:post_edit',
+                                                     kwargs={'post_id': '1'}))
         self.assertEqual(response_author.status_code, 200,
                          'автор не может редактировать свой пост')
 
     def test_rights_create(self):
-        response = self.guest_client.get('/create/')
+        response = self.guest_client.get(reverse('posts:post_create'))
         self.assertRedirects(response, '/auth/login/?next=/create/')
-        response_auth = self.authorized_client.get('/create/')
+        response_auth = self.authorized_client.get(
+            reverse('posts:post_create'))
         self.assertEqual(response_auth.status_code, 200,
                          'активный пользователь не может создать пост')
