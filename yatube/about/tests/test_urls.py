@@ -26,4 +26,3 @@ class StaticPagesURLTests(TestCase):
         """Проверка шаблона для адреса /about/tech/."""
         response = self.guest_client.get(reverse('about:tech'))
         self.assertTemplateUsed(response, 'about/tech.html')
- 
